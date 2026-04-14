@@ -26,5 +26,6 @@ if not exist ".\runtime" (
 
 echo Starting the application...
 pushd gui
+call npm install
 call npx electron .
 popd

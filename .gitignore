@@ -1,5 +1,10 @@
 # Added since electron.exe is too big for github and can be reinstalled
 gui/node_modules
+
+# Node Runtime folder for testing
+runtime/
+
+# Stop tracking local build outputs
 Builds/
 
 # Engine outputs

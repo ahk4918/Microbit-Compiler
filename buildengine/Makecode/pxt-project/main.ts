@@ -1,3 +1,8 @@
 basic.forever(function () {
-    basic.showString("Hello World")
+    let temp = input.temperature()
+    if (temp > 30) {
+        basic.showIcon(IconNames.Sad)
+    } else {
+        basic.showIcon(IconNames.Happy)
+    }
 })
