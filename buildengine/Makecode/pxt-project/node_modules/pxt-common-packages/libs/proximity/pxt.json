@@ -1,0 +1,14 @@
+{
+    "name": "proximity",
+    "description": "Proximity drivers",
+    "files": [
+        "proximity.ts",
+        "vl53l0x.ts"
+    ],
+    "testFiles": [
+    ],
+    "public": true,
+    "dependencies": {
+        "core": "file:../core"
+    }
+}

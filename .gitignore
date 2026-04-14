@@ -1,0 +1,16 @@
+# Added since electron.exe is too big for github and can be reinstalled
+gui/node_modules
+Builds/
+
+# Engine outputs
+buildengine/Makecode/pxt-project/built/
+buildengine/C++/microbit/build/
+buildengine/C++/microbit/samples/
+
+# Random bin files or hex files
+*.bin
+*.hex
+
+# Logs
+*.log
+
