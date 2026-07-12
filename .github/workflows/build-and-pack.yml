@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: '20'
 
-      # 1. Cache the Toolchain Directory to speed up builds
+      # 1. Cache the Toolchain Directory to speed up future runs
       - name: Cache Toolchain
         id: cache-toolchain
         uses: actions/cache@v4
@@ -25,7 +25,7 @@ jobs:
           path: buildengine/C++/toolchain/arm-gcc
           key: ${{ runner.os }}-arm-toolchain-13.2
 
-      # 2. Download & Extract Arm GCC (Only if not cached)
+      # 2. Download & Extract Arm GCC (Only runs if cache misses)
       - name: Setup Arm GNU Toolchain
         if: steps.cache-toolchain.outputs.cache-hit != 'true'
         shell: bash
@@ -43,18 +43,20 @@ jobs:
             echo "Downloading Arm Toolchain for Windows..."
             curl -sL -o arm-toolchain.zip https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-mingw-w64-i686-arm-none-eabi.zip
             echo "Extracting..."
-            # 7z is much faster than PowerShell's Expand-Archive on GitHub runners
             7z x arm-toolchain.zip -obuildengine/C++/toolchain/arm-gcc-temp
             mv buildengine/C++/toolchain/arm-gcc-temp/*/* buildengine/C++/toolchain/arm-gcc/
             rm -rf buildengine/C++/toolchain/arm-gcc-temp
             rm arm-toolchain.zip
           fi
 
-      # 3. Setup Python Venv and Install Tools (uflash for py2hex)
+      # 3. Safe Directory Creation & Python Venv Setup (Fixes the directory error)
       - name: Setup MPython Venv
-        working-directory: buildengine/MPython
         shell: bash
         run: |
+          # Guarantee the directory structure exists before navigating into it
+          mkdir -p buildengine/MPython
+          cd buildengine/MPython
+
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             python -m venv compilerVenv
             ./compilerVenv/Scripts/python -m pip install --upgrade pip
@@ -65,17 +67,17 @@ jobs:
             ./compilerVenv/bin/pip install uflash
           fi
 
-      # 4. Install NPM Dependencies
+      # 4. Install Project NPM Dependencies
       - name: Install Dependencies
         run: npm install
 
-      # 5. Pack Electron App
+      # 5. Pack Electron Application
       - name: Run Electron Packager
         run: npm run pack
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 6. Save Final Installer
+      # 6. Save the final binaries/installers into GitHub Artifacts
       - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
