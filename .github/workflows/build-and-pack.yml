@@ -1,5 +1,10 @@
-name: Build and Pack
-on: [push]
+name: Build and Release
+on:
+  release:
+    types: [published] # Triggers only when you publish a new GitHub Release
+
+permissions:
+  contents: write # Allows the workflow to write assets to your release page
 
 jobs:
   build-and-pack:
@@ -17,7 +22,7 @@ jobs:
         with:
           node-version: '20'
 
-      # 1. Cache the Toolchain Directory to speed up future runs
+      # 1. Cache the Toolchain Directory
       - name: Cache Toolchain
         id: cache-toolchain
         uses: actions/cache@v4
@@ -49,7 +54,7 @@ jobs:
             rm arm-toolchain.zip
           fi
 
-      # 3. Safe Directory Creation & Python Venv Setup (Fixes the directory error)
+      # 3. Safe Directory Creation & Python Venv Setup
       - name: Setup MPython Venv
         shell: bash
         run: |
@@ -71,15 +76,27 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # 5. Pack Electron Application
+      # 5. Pack Electron Application (OS Specific)
       - name: Run Electron Packager
-        run: npm run pack
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            echo "Running Windows packager..."
+            npm run dist:win
+          else
+            echo "Running Linux packager..."
+            npm run dist:linux
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # 6. Save the final binaries/installers into GitHub Artifacts
-      - name: Upload Installer
-        uses: actions/upload-artifact@v4
+a
+      # 6. Upload final installers to the GitHub Release Assets
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: installer-${{ matrix.os }}
-          path: dist/
+          files: |
+            dist/*.exe
+            dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+            dist/*.tar.gz
