@@ -6,9 +6,10 @@ int main() {
     uBit.init();
 
     while (true) {
-        uBit.display.print("*");
-        uBit.sleep(500);
-        uBit.display.clear();
-        uBit.sleep(500);
+        int x = uBit.accelerometer.getX();
+        int y = uBit.accelerometer.getY();
+
+        uBit.display.scroll("(" + ManagedString(x) + "," + ManagedString(y) + ")");
+        uBit.sleep(200);
     }
 }

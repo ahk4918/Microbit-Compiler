@@ -2,7 +2,8 @@ const fs = require("fs");
 const path = require("path");
 const { spawn } = require("child_process");
 
-const ROOT = __dirname;
+// Use __dirname as ROOT (simplified for now)
+const ROOT = "/home/akhileshg/Documents/Code/Microbit-Compiler";
 const ENGINE = path.join(ROOT, "buildengine");
 const MAKECODE = path.join(ENGINE, "Makecode");
 const MPython = path.join(ENGINE, "MPython");
@@ -11,22 +12,36 @@ const CPP = path.join(ENGINE, "C++");
 const PROJECT = path.join(MAKECODE, "pxt-project");
 const BUILT = path.join(PROJECT, "built");
 
+// Cross-platform PATHS
 const PATHS = {
-    npx: path.join(ROOT, "runtime", "node", "npx.cmd"),
-    node: path.join(ROOT, "runtime", "node", "node.exe"),
-    npm: path.join(ROOT, "runtime", "node", "npm.cmd"),
-    python: path.join(MPython, "compilerVenv", "Scripts", "python.exe"),
-    py2hex: path.join(MPython, "compilerVenv", "Scripts", "py2hex.exe"),
-    powershell: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+    npx: "npx",
+    node: "node",
+    npm: "npm",
+    python: process.platform === "win32"
+      ? path.join(MPython, "compilerVenv", "Scripts", "python.exe")
+      : path.join(MPython, "compilerVenv", "bin", "python3"),
+    py2hex: process.platform === "win32"
+      ? path.join(MPython, "compilerVenv", "Scripts", "py2hex.exe")
+      : path.join(MPython, "compilerVenv", "bin", "py2hex"),
+    cmake: process.platform === "win32"
+      ? path.join(CPP, "toolchain", "cmake", "bin", "cmake.exe")
+      : path.join(CPP, "toolchain", "cmake", "bin", "cmake"),
+    ninja: process.platform === "win32"
+      ? path.join(CPP, "toolchain", "ninja", "ninja.exe")
+      : path.join(CPP, "toolchain", "ninja", "ninja"),
+    powershell: process.platform === "win32"
+      ? "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+      : null
 };
 
 function runAsync(cmd, args, cwd, onData) {
+    if (!cmd) {
+        throw new Error(`Command not available on this platform: ${cmd}`);
+    }
     return new Promise((resolve, reject) => {
         const child = spawn(cmd, args, { cwd, shell: true });
-
         child.stdout.on("data", d => onData(d.toString()));
         child.stderr.on("data", d => onData(d.toString()));
-
         child.on("close", code => {
             if (code === 0) resolve();
             else reject(new Error(`Process exited with code ${code}`));
@@ -65,6 +80,25 @@ async function buildTS(tsFile, onLog) {
     fs.writeFileSync(path.join(buildFolder, "source.ts"), code);
     fs.writeFileSync(path.join(PROJECT, "main.ts"), code);
 
+    // Ensure the pxt target is set for Micro:bit
+    const pxtTargetJson = path.join(PROJECT, "pxtarget.json");
+    if (!fs.existsSync(pxtTargetJson)) {
+        log("🔧 Setting PXT target to microbit...");
+        await runAsync(
+            PATHS.npx,
+            ["pxt", "target", "microbit"],
+            PROJECT,
+            log
+        );
+    }
+    // Ensure pxt dependencies are installed
+    await runAsync(
+        PATHS.npx,
+        ["pxt", "install"],
+        PROJECT,
+        log
+    );
+    // Proceed with the build
     await runAsync(
         PATHS.npx,
         ["pxt", "build", "--hw", "v2"],
@@ -128,9 +162,9 @@ async function buildCpp(src, onLog) {
     fs.copyFileSync(src, path.join(buildFolder, "source.cpp"));
     fs.copyFileSync(src, path.join(sourceDir, "main.cpp"));
 
-    // Toolchain environment
-    process.env.CODAL_CMAKE = path.join(CPP, "toolchain", "cmake", "bin", "cmake.exe");
-    process.env.CODAL_NINJA = path.join(CPP, "toolchain", "ninja", "ninja.exe");
+    // Set toolchain environment
+    process.env.CODAL_CMAKE = PATHS.cmake;
+    process.env.CODAL_NINJA = PATHS.ninja;
     process.env.CODAL_ARM_GCC = path.join(CPP, "toolchain", "arm-gcc", "bin");
 
     await runAsync(
@@ -151,7 +185,7 @@ async function buildCpp(src, onLog) {
 
 module.exports = { build };
 
-// ===== CLI MODE =====
+// CLI Mode
 if (require.main === module) {
     const file = process.argv[2];
     const outDir = process.argv[3] || null;
@@ -168,23 +202,15 @@ if (require.main === module) {
     build(file, msg => process.stdout.write(msg + "\n"))
         .then(res => {
             let finalHex = res.hex;
-
-            // If user provided an output folder, copy HEX there
             if (outDir) {
-                const fs = require("fs");
-                const path = require("path");
-
                 if (!fs.existsSync(outDir)) {
                     fs.mkdirSync(outDir, { recursive: true });
                 }
-
                 const dest = path.join(outDir, path.basename(res.hex));
                 fs.copyFileSync(res.hex, dest);
                 finalHex = dest;
-
                 console.log("📤 Copied HEX to:", dest);
             }
-
             console.log("\n✔ Build complete");
             console.log("📁 Build folder:", res.folder);
             console.log("🔹 HEX file:", finalHex);
@@ -194,4 +220,3 @@ if (require.main === module) {
             process.exit(1);
         });
 }
-

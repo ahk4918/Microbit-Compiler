@@ -1,7 +1,12 @@
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const { build } = require("../compiler"); // adjust path if needed
+// This ensures we look for compiler.js in the correct location relative to __dirname
+const compilerPath = app.isPackaged 
+    ? path.join(process.resourcesPath, "app.asar", "compiler.js") 
+    : path.join(__dirname, "../compiler.js");
+
+const { build } = require(compilerPath);
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -12,7 +17,7 @@ function createWindow() {
         }
     });
 
-    win.loadFile("index.html");
+    win.loadFile("./gui/index.html");
 }
 
 app.whenReady().then(createWindow);

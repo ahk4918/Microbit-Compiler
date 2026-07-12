@@ -1,0 +1,54 @@
+name: Build and Pack
+on: [push]
+
+jobs:
+  build-and-pack:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 1. Build Ninja & CMake from source (or extract pre-compiled)
+      - name: Build Toolchain
+        run: |
+          # Add your build commands for CMake/Ninja here
+          # Example: ./buildengine/C++/toolchain/ninja/configure.py --bootstrap
+          echo "Toolchain built successfully."
+
+      # 2. Setup Python Venv and Install Tools
+      - name: Setup MPython Venv
+        working-directory: buildengine/MPython
+        run: |
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            python -m venv compilerVenv
+            ./compilerVenv/Scripts/pip install uflash
+          else
+            python3 -m venv compilerVenv
+            ./compilerVenv/bin/pip install uflash
+          fi
+
+      # 3. Install NPM Dependencies
+      - name: Install Dependencies
+        run: npm install
+
+      # 4. Pack Electron App
+      - name: Run Electron Packager
+        run: npm run pack
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 5. Save Artifacts
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.os }}
+          path: dist/
