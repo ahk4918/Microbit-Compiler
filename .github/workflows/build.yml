@@ -29,8 +29,11 @@ jobs:
           7z x arm-toolchain.zip -obuildengine/C++/toolchain/arm-gcc-temp
           mv buildengine/C++/toolchain/arm-gcc-temp/*/* buildengine/C++/toolchain/arm-gcc/
           rm -rf buildengine/C++/toolchain/arm-gcc-temp arm-toolchain.zip
-      - name: Setup Python Venv
+      - name: Setup MPython Venv
+        shell: bash
         run: |
+          mkdir -p buildengine/MPython
+          cd buildengine/MPython
           python -m venv compilerVenv
           ./compilerVenv/Scripts/pip install uflash
       - name: Install & Build
@@ -45,7 +48,7 @@ jobs:
   # Linux Builds (Parallel)
   build-linux-debian:
     runs-on: ubuntu-latest
-    steps: &linux-steps
+    steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
@@ -59,8 +62,10 @@ jobs:
           mkdir -p buildengine/C++/toolchain/arm-gcc
           wget -q https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz -O arm-toolchain.tar.xz
           tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1
-      - name: Setup Python Venv
+      - name: Setup MPython Venv
         run: |
+          mkdir -p buildengine/MPython
+          cd buildengine/MPython
           python3 -m venv compilerVenv
           ./compilerVenv/bin/pip install uflash
       - run: npm install
@@ -74,7 +79,25 @@ jobs:
   build-linux-fedora:
     runs-on: ubuntu-latest
     steps:
-      - <<: *linux-steps
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Cache Toolchain
+        uses: actions/cache@v4
+        with:
+          path: buildengine/C++/toolchain/arm-gcc
+          key: linux-arm-toolchain-13.2
+      - name: Setup Arm Toolchain
+        run: |
+          mkdir -p buildengine/C++/toolchain/arm-gcc
+          wget -q https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz -O arm-toolchain.tar.xz
+          tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1
+      - name: Setup MPython Venv
+        run: |
+          mkdir -p buildengine/MPython
+          cd buildengine/MPython
+          python3 -m venv compilerVenv
+          ./compilerVenv/bin/pip install uflash
       - run: npm install
       - name: Build
         env:
@@ -86,7 +109,25 @@ jobs:
   build-linux-tar:
     runs-on: ubuntu-latest
     steps:
-      - <<: *linux-steps
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Cache Toolchain
+        uses: actions/cache@v4
+        with:
+          path: buildengine/C++/toolchain/arm-gcc
+          key: linux-arm-toolchain-13.2
+      - name: Setup Arm Toolchain
+        run: |
+          mkdir -p buildengine/C++/toolchain/arm-gcc
+          wget -q https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz -O arm-toolchain.tar.xz
+          tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1
+      - name: Setup MPython Venv
+        run: |
+          mkdir -p buildengine/MPython
+          cd buildengine/MPython
+          python3 -m venv compilerVenv
+          ./compilerVenv/bin/pip install uflash
       - run: npm install
       - name: Build
         env:

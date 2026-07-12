@@ -3,7 +3,7 @@ const path = require("path");
 const { spawn } = require("child_process");
 
 // Use __dirname as ROOT (simplified for now)
-const ROOT = "/home/akhileshg/Documents/Code/Microbit-Compiler";
+const ROOT = __dirname;
 const ENGINE = path.join(ROOT, "buildengine");
 const MAKECODE = path.join(ENGINE, "Makecode");
 const MPython = path.join(ENGINE, "MPython");
