@@ -7,6 +7,9 @@ runtime/
 # Stop tracking local build outputs
 Builds/
 
+# any node_modules
+/node_modules
+
 # Engine outputs
 buildengine/Makecode/pxt-project/built/
 buildengine/C++/microbit/build/
@@ -18,4 +21,7 @@ buildengine/C++/microbit/samples/
 
 # Logs
 *.log
+
+#Build artifacts
+/dist
 
