@@ -17,36 +17,65 @@ jobs:
         with:
           node-version: '20'
 
-      # 1. Build Ninja & CMake from source (or extract pre-compiled)
-      - name: Build Toolchain
-        run: |
-          # Add your build commands for CMake/Ninja here
-          # Example: ./buildengine/C++/toolchain/ninja/configure.py --bootstrap
-          echo "Toolchain built successfully."
+      # 1. Cache the Toolchain Directory to speed up builds
+      - name: Cache Toolchain
+        id: cache-toolchain
+        uses: actions/cache@v4
+        with:
+          path: buildengine/C++/toolchain/arm-gcc
+          key: ${{ runner.os }}-arm-toolchain-13.2
 
-      # 2. Setup Python Venv and Install Tools
+      # 2. Download & Extract Arm GCC (Only if not cached)
+      - name: Setup Arm GNU Toolchain
+        if: steps.cache-toolchain.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p buildengine/C++/toolchain/arm-gcc
+          
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            echo "Downloading Arm Toolchain for Linux..."
+            wget -q https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz -O arm-toolchain.tar.xz
+            echo "Extracting..."
+            tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1
+            rm arm-toolchain.tar.xz
+            
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            echo "Downloading Arm Toolchain for Windows..."
+            curl -sL -o arm-toolchain.zip https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-mingw-w64-i686-arm-none-eabi.zip
+            echo "Extracting..."
+            # 7z is much faster than PowerShell's Expand-Archive on GitHub runners
+            7z x arm-toolchain.zip -obuildengine/C++/toolchain/arm-gcc-temp
+            mv buildengine/C++/toolchain/arm-gcc-temp/*/* buildengine/C++/toolchain/arm-gcc/
+            rm -rf buildengine/C++/toolchain/arm-gcc-temp
+            rm arm-toolchain.zip
+          fi
+
+      # 3. Setup Python Venv and Install Tools (uflash for py2hex)
       - name: Setup MPython Venv
         working-directory: buildengine/MPython
+        shell: bash
         run: |
           if [[ "$RUNNER_OS" == "Windows" ]]; then
             python -m venv compilerVenv
+            ./compilerVenv/Scripts/python -m pip install --upgrade pip
             ./compilerVenv/Scripts/pip install uflash
           else
             python3 -m venv compilerVenv
+            ./compilerVenv/bin/python3 -m pip install --upgrade pip
             ./compilerVenv/bin/pip install uflash
           fi
 
-      # 3. Install NPM Dependencies
+      # 4. Install NPM Dependencies
       - name: Install Dependencies
         run: npm install
 
-      # 4. Pack Electron App
+      # 5. Pack Electron App
       - name: Run Electron Packager
         run: npm run pack
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 5. Save Artifacts
+      # 6. Save Final Installer
       - name: Upload Installer
         uses: actions/upload-artifact@v4
         with:
