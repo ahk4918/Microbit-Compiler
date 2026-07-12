@@ -16,7 +16,6 @@
     "dist:linux:debian": "electron-builder --linux deb",
     "dist:linux:fedora": "electron-builder --linux rpm",
     "dist:linux:tar": "electron-builder --linux tar.gz",
-    "dist:linux:apk": "electron-builder --linux apk",
     "dist:win": "electron-builder --windows",
     "dist:mac": "electron-builder --mac"
   },

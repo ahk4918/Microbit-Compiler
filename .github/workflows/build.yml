@@ -6,112 +6,68 @@ on:
     types: [published]
 
 permissions:
-  contents: write # Allows the workflow to write assets to your release page
+  contents: write
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-    
+  # Windows Build
+  build-windows:
+    runs-on: windows-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      # 1. Cache the Toolchain Directory
-      - name: Cache Toolchain
-        id: cache-toolchain
-        uses: actions/cache@v4
-        with:
-          path: buildengine/C++/toolchain/arm-gcc
-          key: ${{ runner.os }}-arm-toolchain-13.2
-
-      # 2. Download & Extract Arm GCC (Only runs if cache misses)
-      - name: Setup Arm GNU Toolchain
-        if: steps.cache-toolchain.outputs.cache-hit != 'true'
-        shell: bash
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Install & Build
         run: |
-          mkdir -p buildengine/C++/toolchain/arm-gcc
-          
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
-            echo "Downloading Arm Toolchain for Linux..."
-            wget -q https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz -O arm-toolchain.tar.xz
-            echo "Extracting..."
-            tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1
-            rm arm-toolchain.tar.xz
-            
-          elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            echo "Downloading Arm Toolchain for Windows..."
-            curl -sL -o arm-toolchain.zip https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-mingw-w64-i686-arm-none-eabi.zip
-            echo "Extracting..."
-            7z x arm-toolchain.zip -obuildengine/C++/toolchain/arm-gcc-temp
-            mv buildengine/C++/toolchain/arm-gcc-temp/*/* buildengine/C++/toolchain/arm-gcc/
-            rm -rf buildengine/C++/toolchain/arm-gcc-temp
-            rm arm-toolchain.zip
-          fi
+          npm install
+          npm run dist:win
+      - uses: actions/upload-artifact@v4
+        with: { name: installer-win, path: dist/*.exe }
 
-      # 3. Safe Directory Creation & Python Venv Setup
-      - name: Setup MPython Venv
-        shell: bash
-        run: |
-          # Guarantee the directory structure exists before navigating into it
-          mkdir -p buildengine/MPython
-          cd buildengine/MPython
+  # Linux Builds (Parallel Jobs)
+  build-linux-debian:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: |
+          npm install
+          npm run dist:linux:debian
+      - uses: actions/upload-artifact@v4
+        with: { name: installer-deb, path: dist/*.deb }
 
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            python -m venv compilerVenv
-            ./compilerVenv/Scripts/python -m pip install --upgrade pip
-            ./compilerVenv/Scripts/pip install uflash
-          else
-            python3 -m venv compilerVenv
-            ./compilerVenv/bin/python3 -m pip install --upgrade pip
-            ./compilerVenv/bin/pip install uflash
-          fi
+  build-linux-fedora:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: |
+          npm install
+          npm run dist:linux:fedora
+      - uses: actions/upload-artifact@v4
+        with: { name: installer-rpm, path: dist/*.rpm }
 
-      # 4. Install Project NPM Dependencies
-      - name: Install Dependencies
-        run: npm install
+  build-linux-tar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - run: |
+          npm install
+          npm run dist:linux:tar
+      - uses: actions/upload-artifact@v4
+        with: { name: installer-tar, path: dist/*.tar.gz }
 
-      # 5. Pack Electron Application (OS Specific)
-      - name: Run Electron Packager
-        shell: bash
-        run: |
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            echo "Running Windows packager..."
-            npm run dist:win
-          else
-            echo "Running Linux packager..."
-            npm run dist:linux
-          fi
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # 6. Upload Artifacts (Runs on EVERY push so you can test builds)
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
+  # Release Job
+  release:
+    needs: [build-windows, build-linux-debian, build-linux-fedora, build-linux-tar]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts }
+      - uses: softprops/action-gh-release@v2
         with:
-          name: installers-${{ matrix.os }}
-          path: |
-            dist/*.exe
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.rpm
-            dist/*.tar.gz
-
-      # 7. Upload to GitHub Release (Runs ONLY when you publish a new release)
-      - name: Upload to GitHub Release
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            dist/*.exe
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.rpm
-            dist/*.tar.gz
+          files: artifacts/**/*/*
