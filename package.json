@@ -32,7 +32,6 @@
     "copyright": "Copyright © 2026 Akhilesh Gollapudi",
     "directories": {
       "output": "dist",
-      "app": "gui",
       "buildResources": "assets"
     },
     "files": [
