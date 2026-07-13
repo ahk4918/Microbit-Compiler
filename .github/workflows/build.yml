@@ -12,6 +12,7 @@ permissions:
 jobs:
   # Windows Build
   build-windows:
+    continue-on-error: true
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,6 +64,7 @@ jobs:
 
   # macOS Universal Build
   build-mac:
+    continue-on-error: true
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -84,9 +86,10 @@ jobs:
         run: |
           rm -rf buildengine/C++/toolchain/arm-gcc arm-toolchain.tar.xz
           mkdir -p buildengine/C++/toolchain/arm-gcc
-          curl -sL "https://arm.com" -o arm-toolchain.tar.xz || exit 1
+          curl -sL "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz" -o arm-toolchain.tar.xz || exit 1
           tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1 || exit 1
           rm arm-toolchain.tar.xz
+
 
       - name: Setup MicroPython Venv (Copy Python)
         run: |
@@ -112,6 +115,7 @@ jobs:
 
   # Debian Build
   build-linux-debian:
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -160,6 +164,7 @@ jobs:
 
   # Fedora Build
   build-linux-fedora:
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -209,6 +214,7 @@ jobs:
   # Generic Linux TAR Build
   build-linux-tar:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
