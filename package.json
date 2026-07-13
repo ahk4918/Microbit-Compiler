@@ -76,7 +76,7 @@
           "target": "pkg",
           "arch": "universal"
         }
-  ],
+      ],
       "icon": "assets/icon.icns",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
@@ -84,20 +84,22 @@
       "entitlementsInherit": "entitlements.mac.plist"
     },
     "linux": {
-      "target": [ "deb", "rpm", "tar.gz" ],
-      "icon": "assets/icon.png",
-      "category": "Development",
-      "maintainer": "Akhilesh Gollapudi <akhilesh.gollapudi@outlook.com>",
-      "executableName": "microbit-compiler",
-      "desktop": {
-        "Name": "Micro:bit Compiler",
-        "Comment": "Compile code for Micro:bit devices",
-        "Terminal": "false",
-        "Type": "Application",
-        "Categories": "Development;IDE;"
-      }
-    },
-    "nsis": {
+        "target": [ "deb", "rpm", "tar.gz" ],
+        "icon": "assets/icon.png",
+        "category": "Development",
+        "maintainer": "Akhilesh Gollapudi <akhilesh.gollapudi@outlook.com>",
+        "executableName": "microbit-compiler",
+        "desktop": {
+          "entry": {
+            "Name": "Micro:bit Compiler",
+            "Comment": "Compile code for Micro:bit devices",
+            "Terminal": "false",
+            "Type": "Application",
+            "Categories": "Development;IDE;"
+          }
+        }
+      },
+      "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "assets/icon.ico",
