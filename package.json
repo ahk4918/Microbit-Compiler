@@ -3,20 +3,16 @@
   "version": "1.0.0",
   "description": "Full Compiler GUI with support for building TS (Makecode), Python and C++ (CODAL) code for Microbit",
   "homepage": "https://github.com/ahk4918/microbit-compiler",
-  "author": {
-    "name": "Akhilesh G",
-    "email": "akhilesh.gollapudi@outlook.com"
-  },
   "main": "./gui/main.js",
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist:all": "electron-builder --linux --windows --mac --publish always",
-    "dist:linux:debian": "electron-builder --linux deb --publish always",
-    "dist:linux:fedora": "electron-builder --linux rpm --publish always",
-    "dist:linux:tar": "electron-builder --linux tar.gz --publish always",
-    "dist:win": "electron-builder --windows --publish always",
-    "dist:mac": "electron-builder --mac --publish always"
+    "dist:all": "electron-builder --linux --windows --mac",
+    "dist:linux:debian": "electron-builder --linux deb",
+    "dist:linux:fedora": "electron-builder --linux rpm",
+    "dist:linux:tar": "electron-builder --linux tar.gz",
+    "dist:win": "electron-builder --windows",
+    "dist:mac": "electron-builder --mac"
   },
   "dependencies": {
     "electron-updater": "^6.3.9",
@@ -29,57 +25,14 @@
   "build": {
     "appId": "com.compiler.microbit",
     "productName": "Microbit Compiler",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "gui/**/*",
-      "buildengine/**/*",
-      "assets/**/*",
-      "package.json",
-      "compiler.js",
-      "flash.js"
-    ],
-    "extraResources": [
-      {
-        "from": "buildengine/",
-        "to": "buildengine/",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "assets/",
-        "to": "assets/",
-        "filter": ["**/*"]
-      }
-    ],
+    "directories": { "output": "dist" },
+    "files": [ "gui/**/*", "buildengine/**/*", "assets/**/*", "package.json", "compiler.js", "flash.js" ],
     "publish": {
       "provider": "github",
       "owner": "ahk4918",
       "repo": "microbit-compiler"
     },
-    "linux": {
-      "target": ["deb", "rpm", "tar.gz"],
-      "category": "Development",
-      "maintainer": "Akhilesh G <akhilesh.gollapudi@outlook.com>",
-      "icon": "assets/icon.png"
-    },
-    "win": {
-      "target": ["nsis"],
-      "icon": "assets/icon.ico"
-    },
-    "mac": {
-      "target": ["dmg", "pkg"],
-      "category": "public.app-category.developer-tools",
-      "icon": "assets/icon.icns",
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "entitlements.mac.plist",
-      "entitlementsInherit": "entitlements.mac.plist"
-    },
-    "icon": "assets/icon.png"
-  },
-  "keywords": ["microbit", "compiler", "typescript", "python", "c++", "codal", "makecode", "gui", "desktop"],
-  "license": "ISC",
-  "type": "commonjs",
-  "desktopName": "com.compiler.microbit.desktop"
+    "linux": { "target": ["deb", "rpm", "tar.gz"] },
+    "win": { "target": ["nsis"] }
+  }
 }

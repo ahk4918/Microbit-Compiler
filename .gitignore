@@ -22,6 +22,9 @@ buildengine/C++/microbit/samples/
 # Logs
 *.log
 
+# Mypython Virtual Environment
+buildengine/MPython/compilerVenv/
+
 #Build artifacts
 /dist
 
