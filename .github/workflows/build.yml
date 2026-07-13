@@ -35,12 +35,13 @@ jobs:
           mv buildengine/C++/toolchain/arm-gcc-temp/*/* buildengine/C++/toolchain/arm-gcc/ || exit 1
           rm -rf buildengine/C++/toolchain/arm-gcc-temp arm-toolchain.zip
 
-      - name: Setup MicroPython Venv
+      - name: Setup MicroPython Venv (Copy Python)
         shell: bash
         run: |
           mkdir -p buildengine/MPython
           cd buildengine/MPython
-          python -m venv compilerVenv
+          # Create venv with --copies to avoid symlinks
+          python -m venv compilerVenv --copies
           ./compilerVenv/Scripts/pip install uflash
 
       - name: Install & Build
@@ -80,11 +81,12 @@ jobs:
           tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1 || exit 1
           rm arm-toolchain.tar.xz
 
-      - name: Setup MicroPython Venv
+      - name: Setup MicroPython Venv (Copy Python)
         run: |
           mkdir -p buildengine/MPython
           cd buildengine/MPython
-          python3 -m venv compilerVenv
+          # Create venv with --copies to avoid symlinks
+          python3 -m venv compilerVenv --copies
           ./compilerVenv/bin/pip install uflash
 
       - name: Install Dependencies
@@ -125,11 +127,11 @@ jobs:
           tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1 || exit 1
           rm arm-toolchain.tar.xz
 
-      - name: Setup MicroPython Venv
+      - name: Setup MicroPython Venv (Copy Python)
         run: |
           mkdir -p buildengine/MPython
           cd buildengine/MPython
-          python3 -m venv compilerVenv
+          python3 -m venv compilerVenv --copies
           ./compilerVenv/bin/pip install uflash
 
       - name: Install Dependencies
@@ -170,11 +172,11 @@ jobs:
           tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1 || exit 1
           rm arm-toolchain.tar.xz
 
-      - name: Setup MicroPython Venv
+      - name: Setup MicroPython Venv (Copy Python)
         run: |
           mkdir -p buildengine/MPython
           cd buildengine/MPython
-          python3 -m venv compilerVenv
+          python3 -m venv compilerVenv --copies
           ./compilerVenv/bin/pip install uflash
 
       - name: Install Dependencies
@@ -192,7 +194,7 @@ jobs:
           path: dist/*.tar.gz
           compression-level: 9
 
-  # Release Job (only runs on release)
+  # Release Job
   release:
     needs: [build-windows, build-linux-debian, build-linux-fedora, build-linux-tar]
     if: github.event_name == 'release'
@@ -203,9 +205,6 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
-
-      - name: List Artifacts
-        run: ls -R artifacts
 
       - name: Release
         uses: softprops/action-gh-release@v2
