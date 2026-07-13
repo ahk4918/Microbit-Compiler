@@ -2,7 +2,7 @@
   "name": "Microbit-Compiler",
   "version": "1.0.0",
   "description": "Full Compiler GUI with support for building TS (Makecode), Python and C++ (CODAL) code for Micro:bit",
-  "homepage": "https://github.com/ahk4918/microbit-compiler",
+  "homepage": "https://github.com",
   "author": {
     "name": "Akhilesh Gollapudi",
     "email": "akhilesh.gollapudi@outlook.com"
@@ -46,16 +46,19 @@
       {
         "from": "buildengine/MPython/compilerVenv/",
         "to": "resources/compilerVenv/",
-        "filter": ["**/*"]
+        "filter": [ "**/*" ]
       },
       {
         "from": "buildengine/C++/toolchain/arm-gcc/",
         "to": "resources/toolchain/",
-        "filter": ["**/*"]
+        "filter": [ "**/*" ]
       }
     ],
     "asar": false,
-    "asarUnpack": ["**/*.{node,dll,exe,so,dylib}", "resources/**"],
+    "asarUnpack": [
+      "**/*.{node,dll,exe,so,dylib}",
+      "resources/**"
+    ],
     "icon": "assets/icon.png",
     "publish": {
       "provider": "github",
@@ -68,7 +71,12 @@
       "requestedExecutionLevel": "asInvoker"
     },
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        {
+          "target": "pkg",
+          "arch": "universal"
+        }
+  ],
       "icon": "assets/icon.icns",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
@@ -76,16 +84,15 @@
       "entitlementsInherit": "entitlements.mac.plist"
     },
     "linux": {
-      "target": ["deb", "rpm", "tar.gz"],
+      "target": [ "deb", "rpm", "tar.gz" ],
       "icon": "assets/icon.png",
       "category": "Development",
       "maintainer": "Akhilesh Gollapudi <akhilesh.gollapudi@outlook.com>",
+      "executableName": "microbit-compiler",
       "desktop": {
         "Name": "Micro:bit Compiler",
         "Comment": "Compile code for Micro:bit devices",
-        "Exec": "microbit-compiler",
-        "Icon": "microbit-compiler",
-        "Terminal": false,
+        "Terminal": "false",
         "Type": "Application",
         "Categories": "Development;IDE;"
       }
@@ -98,29 +105,6 @@
       "installerHeaderIcon": "assets/icon.ico",
       "createStartMenuShortcut": true,
       "shortcutName": "Micro:bit Compiler"
-    },
-    "dmg": {
-      "title": "Micro:bit Compiler ${version}",
-      "icon": "assets/icon.icns",
-      "background": "assets/dmg-background.png",
-      "window": {
-        "width": 540,
-        "height": 380
-      },
-      "contents": [
-        {
-          "x": 410,
-          "y": 190,
-          "type": "link",
-          "path": "/Applications"
-        },
-        {
-          "x": 130,
-          "y": 190,
-          "type": "file",
-          "path": "Micro:bit Compiler.app"
-        }
-      ]
     }
   }
-} 
+}
