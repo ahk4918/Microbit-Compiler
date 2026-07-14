@@ -29,55 +29,28 @@
   "build": {
     "appId": "com.compiler.microbit",
     "productName": "Micro:bit Compiler",
-    "copyright": "Copyright © 2026 Akhilesh Gollapudi",
-    "directories": {
-      "output": "dist",
-      "buildResources": "assets"
-    },
-    "files": [
-      "gui/**/*",
-      "buildengine/**/*",
-      "assets/**/*",
-      "package.json",
-      "compiler.js",
-      "flash.js"
-    ],
     "extraResources": [
       {
-        "from": "buildengine/MPython/compilerVenv/",
-        "to": "resources/compilerVenv/",
+        "from": "buildengine/MPython/compilerVenv-x64/",
+        "to": "resources/compilerVenv/x64/",
         "filter": ["**/*"]
       },
       {
-        "from": "buildengine/C++/toolchain/arm-gcc/",
-        "to": "resources/toolchain/",
+        "from": "buildengine/MPython/compilerVenv-arm64/",
+        "to": "resources/compilerVenv/arm64/",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "buildengine/C++/toolchain/arm-gcc-x64/",
+        "to": "resources/toolchain/x64/",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "buildengine/C++/toolchain/arm-gcc-arm64/",
+        "to": "resources/toolchain/arm64/",
         "filter": ["**/*"]
       }
     ],
-    "asar": false,
-    "asarUnpack": [
-      "**/*.{node,dll,exe,so,dylib}",
-      "resources/**"
-    ],
-    "x64ArchFiles": [
-      "buildengine/Makecode/pxt-project/node_modules/bare-fs/prebuilds/darwin-x64/**/*",
-      "buildengine/Makecode/pxt-project/node_modules/**/prebuilds/darwin-x64/**/*"
-    ],
-    "arm64ArchFiles": [
-      "buildengine/Makecode/pxt-project/node_modules/bare-fs/prebuilds/darwin-arm64/**/*",
-      "buildengine/Makecode/pxt-project/node_modules/**/prebuilds/darwin-arm64/**/*"
-    ],
-    "icon": "assets/icon.png",
-    "publish": {
-      "provider": "github",
-      "owner": "ahk4918",
-      "repo": "microbit-compiler"
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "assets/icon.ico",
-      "requestedExecutionLevel": "asInvoker"
-    },
     "mac": {
       "target": [
         {
@@ -85,36 +58,10 @@
           "arch": "universal"
         }
       ],
-      "icon": "assets/icon.icns",
       "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "entitlements.mac.plist",
       "entitlementsInherit": "entitlements.mac.plist"
-    },
-    "linux": {
-      "target": ["deb", "rpm", "tar.gz"],
-      "icon": "assets/icon.png",
-      "category": "Development",
-      "maintainer": "Akhilesh Gollapudi <akhilesh.gollapudi@outlook.com>",
-      "executableName": "microbit-compiler",
-      "desktop": {
-        "entry": {
-          "Name": "Micro:bit Compiler",
-          "Comment": "Compile code for Micro:bit devices",
-          "Terminal": "false",
-          "Type": "Application",
-          "Categories": "Development;IDE;"
-        }
-      }
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "installerIcon": "assets/icon.ico",
-      "uninstallerIcon": "assets/icon.ico",
-      "installerHeaderIcon": "assets/icon.ico",
-      "createStartMenuShortcut": true,
-      "shortcutName": "Micro:bit Compiler"
     }
   }
 }
