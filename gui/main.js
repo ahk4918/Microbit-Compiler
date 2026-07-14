@@ -7,6 +7,7 @@ const compilerPath = app.isPackaged
     : path.join(__dirname, "../compiler.js");
 
 const { build } = require(compilerPath);
+const { flash } = require("../flash.js");
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -71,34 +72,8 @@ ipcMain.handle("start-build", async (event, filePath) => {
 
 ipcMain.handle("flash-hex", async (_, hexPath) => {
     try {
-        const fs = require("fs");
-        const path = require("path");
-
-        // Scan all possible drive letters
-        const letters = "DEFGHIJKLMNOPQRSTUVWXYZ".split("");
-        let microbit = null;
-
-        for (const letter of letters) {
-            const drive = `${letter}:\\`;
-            const htm = path.join(drive, "MICROBIT.HTM");
-
-            try {
-                if (fs.existsSync(htm)) {
-                    microbit = drive;
-                    break;
-                }
-            } catch {}
-        }
-
-        if (!microbit) {
-            return { ok: false, error: "Micro:bit not found" };
-        }
-
-        const dest = path.join(microbit, "MICROBIT.hex");
-        fs.copyFileSync(hexPath, dest);
-
-        return { ok: true, message: `Flashed to ${microbit}` };
-
+        const message = flash(hexPath); // Uses your robust flasher logic
+        return { ok: true, message: message };
     } catch (err) {
         return { ok: false, error: err.message };
     }

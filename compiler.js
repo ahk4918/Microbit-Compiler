@@ -3,12 +3,10 @@ const path = require("path");
 const { spawn } = require("child_process");
 const { app } = require("electron");
 
-// Helper to resolve resource paths regardless of environment
+// Helper to resolve resource paths
 const getBaseResources = () => {
-    // If running in a production bundle, use process.resourcesPath
-    // Otherwise, assume local development environment
     return (app && app.isPackaged) 
-        ? path.join(process.resourcesPath, "resources") 
+        ? path.join(process.resourcesPath, "resources", "buildengine") 
         : path.join(__dirname, "..", "buildengine");
 };
 
@@ -38,11 +36,12 @@ const ROOT = __dirname;
 const PROJECT = path.join(ROOT, "buildengine", "Makecode", "pxt-project");
 const BUILT = path.join(PROJECT, "built");
 
-function runAsync(cmd, args, cwd, onData) {
+// Updated runAsync to accept custom environment variables
+function runAsync(cmd, args, cwd, onLog, env = process.env) {
     return new Promise((resolve, reject) => {
-        const child = spawn(cmd, args, { cwd, shell: true });
-        child.stdout.on("data", d => onData(d.toString()));
-        child.stderr.on("data", d => onData(d.toString()));
+        const child = spawn(cmd, args, { cwd, shell: true, env });
+        child.stdout.on("data", d => onLog(d.toString()));
+        child.stderr.on("data", d => onLog(d.toString()));
         child.on("close", code => {
             if (code === 0) resolve();
             else reject(new Error(`Process exited with code ${code}`));
@@ -61,14 +60,12 @@ function createBuildFolder(srcFile) {
 async function buildTS(tsFile, onLog) {
     const PATHS = getPaths();
     const buildFolder = createBuildFolder(tsFile);
-    const log = msg => onLog(msg);
-
-    log("🔨 Building TypeScript...");
+    
     const code = fs.readFileSync(tsFile, "utf8");
     fs.writeFileSync(path.join(PROJECT, "main.ts"), code);
 
-    await runAsync(PATHS.npx, ["pxt", "install"], PROJECT, log);
-    await runAsync(PATHS.npx, ["pxt", "build", "--hw", "v2"], PROJECT, log);
+    await runAsync(PATHS.npx, ["pxt", "install"], PROJECT, onLog);
+    await runAsync(PATHS.npx, ["pxt", "build", "--hw", "v2"], PROJECT, onLog);
 
     const dest = path.join(buildFolder, `${path.basename(tsFile, ".ts")}-v2.hex`);
     fs.copyFileSync(path.join(BUILT, "mbcodal-binary.hex"), dest);
@@ -78,31 +75,26 @@ async function buildTS(tsFile, onLog) {
 async function buildPython(pyFile, onLog) {
     const PATHS = getPaths();
     const buildFolder = createBuildFolder(pyFile);
-    const log = msg => onLog(msg);
 
-    log("🔨 Building MicroPython...");
-    const outHex = path.join(buildFolder, `${path.basename(pyFile, ".py")}.hex`);
-
-    await runAsync(PATHS.py2hex, [pyFile, "-o", buildFolder], ROOT, log);
-    return { folder: buildFolder, hex: outHex };
+    await runAsync(PATHS.py2hex, [pyFile, "-o", buildFolder], ROOT, onLog);
+    return { folder: buildFolder, hex: path.join(buildFolder, `${path.basename(pyFile, ".py")}.hex`) };
 }
 
 async function buildCpp(src, onLog) {
     const PATHS = getPaths();
     const buildFolder = createBuildFolder(src);
-    const CPP_ROOT = path.join(getBaseResources(), "C++");
-    const log = msg => onLog(msg);
-
-    log("🔨 Building C++ (CODAL)...");
+    const CPP_ROOT = getBaseResources();
     
-    // Set environment for sub-process
-    process.env.CODAL_CMAKE = PATHS.cmake;
-    process.env.CODAL_NINJA = PATHS.ninja;
-    process.env.CODAL_ARM_GCC = path.join(CPP_ROOT, "toolchain", "arm-gcc", "bin");
+    // Build custom environment for the compiler sub-process
+    const env = Object.create(process.env);
+    const armGccBin = path.join(CPP_ROOT, "C++", "toolchain", "arm-gcc", "bin");
+    env.PATH = `${armGccBin}${path.delimiter}${env.PATH}`;
+    env.CODAL_CMAKE = PATHS.cmake;
+    env.CODAL_NINJA = PATHS.ninja;
 
-    await runAsync(PATHS.python, ["build.py"], path.join(CPP_ROOT, "microbit"), log);
+    await runAsync(PATHS.python, ["build.py"], path.join(CPP_ROOT, "C++", "microbit"), onLog, env);
 
-    const outHex = path.join(CPP_ROOT, "microbit", "MICROBIT.hex");
+    const outHex = path.join(CPP_ROOT, "C++", "microbit", "MICROBIT.hex");
     const dest = path.join(buildFolder, `${path.basename(src, ".cpp")}.hex`);
     fs.copyFileSync(outHex, dest);
 

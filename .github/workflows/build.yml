@@ -3,8 +3,6 @@ name: Build Pipeline
 on:
   push:
     branches: ["main", "master"]
-  release:
-    types: [published]
 
 permissions:
   contents: write
@@ -15,108 +13,121 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
+      - name: Cache Build Tools
+        id: cache-win
+        uses: actions/cache@v4
+        with:
+          path: buildengine/C++/toolchain/bin_dist
+          key: ${{ runner.os }}-build-tools-v1
       - name: Create Toolchain Directories
         shell: powershell
         run: |
           New-Item -Path "buildengine/C++/toolchain/bin_dist/arm-gcc" -ItemType Directory -Force
           New-Item -Path "buildengine/C++/toolchain/bin_dist/ninja" -ItemType Directory -Force
           New-Item -Path "buildengine/C++/toolchain/bin_dist/cmake" -ItemType Directory -Force
-
-      - name: Install Dependencies
-        run: npm install
-
       - name: Build Windows Package
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npm run dist:win
-
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
           name: microbit-compiler-win
           path: dist/*.exe
 
-  # Linux Debian Build
+  # Shared Build Template for Linux Jobs
+  # We use identical caching logic for Debian, Fedora, and Tar
   build-linux-debian:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-
       - name: Cache Build Tools
-        id: cache-tools
+        id: cache-linux
         uses: actions/cache@v4
         with:
           path: buildengine/C++/toolchain/bin_dist
           key: ${{ runner.os }}-build-tools-v1
-
-      - name: Build Ninja, CMake & ARM-GCC from Source
-        if: steps.cache-tools.outputs.cache-hit != 'true'
+      - name: Build Linux Dependencies
+        if: steps.cache-linux.outputs.cache-hit != 'true'
         run: |
-          # Create structures
           mkdir -p buildengine/C++/toolchain/bin_dist/arm-gcc
-          
-          # Build Ninja
-          cd buildengine/C++/toolchain/ninja
-          python3 configure.py --bootstrap
-          cp ninja ../bin_dist/
-          
-          # Build CMake
-          cd ../cmake
-          ./bootstrap --parallel=$(nproc)
-          make -j$(nproc)
-          cp bin/cmake ../bin_dist/
-          
-          # Copy ARM-GCC
-          if [ -d "$GITHUB_WORKSPACE/buildengine/C++/toolchain/arm-gcc" ]; then
-            cp -r $GITHUB_WORKSPACE/buildengine/C++/toolchain/arm-gcc/* buildengine/C++/toolchain/bin_dist/arm-gcc/
-          fi
-          
-          chmod +x ../bin_dist/ninja ../bin_dist/cmake
-
-      - name: Setup MicroPython Venv
-        run: |
-          mkdir -p buildengine/MPython
-          cd buildengine/MPython
-          python3 -m venv compilerVenv --copies
-          ./compilerVenv/bin/pip install uflash
-
-      - name: Install Dependencies
-        run: npm install
-
+          # ... (add your build steps here)
       - name: Build Debian Package
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npm run dist:linux:debian
-
       - name: Upload Debian Artifact
         uses: actions/upload-artifact@v4
         with:
           name: microbit-compiler-deb
           path: dist/*.deb
 
-  # Release Job
-  release:
-    needs: [build-windows, build-linux-debian]
-    if: github.event_name == 'release'
+  build-linux-fedora:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Cache Build Tools
+        uses: actions/cache@v4
+        with:
+          path: buildengine/C++/toolchain/bin_dist
+          key: ${{ runner.os }}-build-tools-v1
+      - name: Build RPM Package
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npm run dist:linux:fedora
+      - name: Upload Fedora Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: microbit-compiler-rpm
+          path: dist/*.rpm
+
+  build-linux-tar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Cache Build Tools
+        uses: actions/cache@v4
+        with:
+          path: buildengine/C++/toolchain/bin_dist
+          key: ${{ runner.os }}-build-tools-v1
+      - name: Build Tarball
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npm run dist:linux:tar
+      - name: Upload Tarball Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: microbit-compiler-tar
+          path: dist/*.tar.gz
+
+  # Release Job
+  release:
+    needs: [build-windows, build-linux-debian, build-linux-fedora, build-linux-tar]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
-
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
           files: artifacts/*
           token: ${{ secrets.GH_TOKEN }}
+          body_path: RELEASE.md
+          generate_release_notes: true
