@@ -46,18 +46,26 @@
       {
         "from": "buildengine/MPython/compilerVenv/",
         "to": "resources/compilerVenv/",
-        "filter": [ "**/*" ]
+        "filter": ["**/*"]
       },
       {
         "from": "buildengine/C++/toolchain/arm-gcc/",
         "to": "resources/toolchain/",
-        "filter": [ "**/*" ]
+        "filter": ["**/*"]
       }
     ],
-    "asar": false,
+    "asar": true,
     "asarUnpack": [
       "**/*.{node,dll,exe,so,dylib}",
       "resources/**"
+    ],
+    "x64ArchFiles": [
+      "buildengine/Makecode/pxt-project/node_modules/bare-fs/prebuilds/darwin-x64/**/*",
+      "buildengine/Makecode/pxt-project/node_modules/**/prebuilds/darwin-x64/**/*"
+    ],
+    "arm64ArchFiles": [
+      "buildengine/Makecode/pxt-project/node_modules/bare-fs/prebuilds/darwin-arm64/**/*",
+      "buildengine/Makecode/pxt-project/node_modules/**/prebuilds/darwin-arm64/**/*"
     ],
     "icon": "assets/icon.png",
     "publish": {
@@ -84,22 +92,22 @@
       "entitlementsInherit": "entitlements.mac.plist"
     },
     "linux": {
-        "target": [ "deb", "rpm", "tar.gz" ],
-        "icon": "assets/icon.png",
-        "category": "Development",
-        "maintainer": "Akhilesh Gollapudi <akhilesh.gollapudi@outlook.com>",
-        "executableName": "microbit-compiler",
-        "desktop": {
-          "entry": {
-            "Name": "Micro:bit Compiler",
-            "Comment": "Compile code for Micro:bit devices",
-            "Terminal": "false",
-            "Type": "Application",
-            "Categories": "Development;IDE;"
-          }
+      "target": ["deb", "rpm", "tar.gz"],
+      "icon": "assets/icon.png",
+      "category": "Development",
+      "maintainer": "Akhilesh Gollapudi <akhilesh.gollapudi@outlook.com>",
+      "executableName": "microbit-compiler",
+      "desktop": {
+        "entry": {
+          "Name": "Micro:bit Compiler",
+          "Comment": "Compile code for Micro:bit devices",
+          "Terminal": "false",
+          "Type": "Application",
+          "Categories": "Development;IDE;"
         }
-      },
-      "nsis": {
+      }
+    },
+    "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "assets/icon.ico",
