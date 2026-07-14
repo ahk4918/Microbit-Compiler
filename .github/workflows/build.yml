@@ -3,6 +3,8 @@ name: Build Pipeline
 on:
   push:
     branches: ["main", "master"]
+  release:
+    types: [published]
 
 permissions:
   contents: write
