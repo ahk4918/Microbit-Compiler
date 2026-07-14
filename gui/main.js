@@ -11,12 +11,18 @@ const compilerPath = app.isPackaged
 const { build } = require(compilerPath);
 const { flash } = require("../flash.js");
 
-// 2. Helper to get writable directory (prevents ENOTDIR error)
 function getBuildsDir() {
-    const dir = path.join(app.getPath("userData"), "Builds");
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    // Windows: AppData\Roaming\microbit-compiler-builds
+    // macOS: Library/Application Support/microbit-compiler-builds
+    // Linux: ~/.config/microbit-compiler-builds
+    const dir = path.join(app.getPath("appData"), "microbit-compiler", "Builds");
+    
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
     return dir;
 }
+
 
 function createWindow() {
     const win = new BrowserWindow({
@@ -51,7 +57,6 @@ ipcMain.handle("start-build", async (event, filePath) => {
     try {
         const result = await build(
             filePath,
-            buildsDir, // Pass writable dir to compiler
             msg => {
                 event.sender.send("build-log", msg);
                 if (msg.includes("Compiling")) event.sender.send("build-progress", 20);
