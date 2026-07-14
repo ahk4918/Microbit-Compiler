@@ -113,34 +113,30 @@ jobs:
           path: dist/*.pkg
           compression-level: 9
 
-  # Debian Build
   build-linux-debian:
-    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
+        with: { node-version: '20' }
 
-      - name: Cache ARM Toolchain
-        id: cache-arm-debian
-        uses: actions/cache@v4
-        with:
-          path: buildengine/C++/toolchain/arm-gcc
-          key: linux-arm-toolchain-13.2.rel1-debian
-
-      - name: Setup ARM Toolchain
-        if: steps.cache-arm-debian.outputs.cache-hit != 'true'
+      - name: Build Tools from Source (CMake & Ninja)
         run: |
-          rm -rf buildengine/C++/toolchain/arm-gcc arm-toolchain.tar.xz
-          mkdir -p buildengine/C++/toolchain/arm-gcc
-          wget -q "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz" -O arm-toolchain.tar.xz || exit 1
-          tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1 || exit 1
-          rm arm-toolchain.tar.xz
+          # Build Ninja
+          cd buildengine/C++/toolchain/ninja
+          python3 configure.py --bootstrap
+          
+          # Build CMake
+          cd ../cmake
+          ./bootstrap --parallel=$(nproc)
+          make -j$(nproc)
+          
+          # Move to a staging directory for packaging
+          mkdir -p ../bin_dist
+          cp ninja ../bin_dist/
+          cp bin/cmake ../bin_dist/
 
-      - name: Setup MicroPython Venv (Copy Python)
+      - name: Setup MicroPython Venv
         run: |
           mkdir -p buildengine/MPython
           cd buildengine/MPython
@@ -151,17 +147,9 @@ jobs:
         run: npm install
 
       - name: Build Debian Package
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        env: { GH_TOKEN: ${{ secrets.GH_TOKEN }} }
         run: npm run dist:linux:debian
-
-      - name: Upload Debian Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: microbit-compiler-deb
-          path: dist/*.deb
-          compression-level: 9
-
+        
   # Fedora Build
   build-linux-fedora:
     continue-on-error: true

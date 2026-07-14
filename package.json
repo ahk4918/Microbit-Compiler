@@ -11,12 +11,12 @@
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist:all": "electron-builder --linux --windows --mac",
-    "dist:linux:debian": "electron-builder --linux deb",
-    "dist:linux:fedora": "electron-builder --linux rpm",
-    "dist:linux:tar": "electron-builder --linux tar.gz",
-    "dist:win": "electron-builder --windows",
-    "dist:mac": "electron-builder --mac"
+    "dist:all": "electron-builder --linux --windows --mac --publish always",
+    "dist:linux:debian": "electron-builder --linux deb --publish always",
+    "dist:linux:fedora": "electron-builder --linux rpm --publish always",
+    "dist:linux:tar": "electron-builder --linux tar.gz --publish always",
+    "dist:win": "electron-builder --windows --publish always",
+    "dist:mac": "electron-builder --mac --publish always"
   },
   "dependencies": {
     "electron-updater": "^6.3.9",
