@@ -20,6 +20,13 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Create Toolchain Directories
+        shell: powershell
+        run: |
+          New-Item -Path "buildengine/C++/toolchain/bin_dist/arm-gcc" -ItemType Directory -Force
+          New-Item -Path "buildengine/C++/toolchain/bin_dist/ninja" -ItemType Directory -Force
+          New-Item -Path "buildengine/C++/toolchain/bin_dist/cmake" -ItemType Directory -Force
+
       - name: Install Dependencies
         run: npm install
 
@@ -54,7 +61,8 @@ jobs:
       - name: Build Ninja, CMake & ARM-GCC from Source
         if: steps.cache-tools.outputs.cache-hit != 'true'
         run: |
-          mkdir -p buildengine/C++/toolchain/bin_dist
+          # Create structures
+          mkdir -p buildengine/C++/toolchain/bin_dist/arm-gcc
           
           # Build Ninja
           cd buildengine/C++/toolchain/ninja
@@ -68,9 +76,10 @@ jobs:
           cp bin/cmake ../bin_dist/
           
           # Copy ARM-GCC
-          cp -r $GITHUB_WORKSPACE/buildengine/C++/toolchain/arm-gcc $GITHUB_WORKSPACE/buildengine/C++/toolchain/bin_dist/
+          if [ -d "$GITHUB_WORKSPACE/buildengine/C++/toolchain/arm-gcc" ]; then
+            cp -r $GITHUB_WORKSPACE/buildengine/C++/toolchain/arm-gcc/* buildengine/C++/toolchain/bin_dist/arm-gcc/
+          fi
           
-          # Set permissions
           chmod +x ../bin_dist/ninja ../bin_dist/cmake
 
       - name: Setup MicroPython Venv
