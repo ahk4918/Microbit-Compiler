@@ -14,21 +14,34 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build Ninja & CMake from Source
+      # 1. Define Cache for all custom tools
+      - name: Cache Build Tools
+        id: cache-tools
+        uses: actions/cache@v4
+        with:
+          path: buildengine/C++/toolchain/bin_dist
+          key: ${{ runner.os }}-build-tools-v1
+
+      # 2. Build only if cache-hit is false
+      - name: Build Ninja, CMake & ARM-GCC from Source
+        if: steps.cache-tools.outputs.cache-hit != 'true'
         run: |
+          mkdir -p buildengine/C++/toolchain/bin_dist
+          
           # Build Ninja
           cd buildengine/C++/toolchain/ninja
           python3 configure.py --bootstrap
+          cp ninja ../bin_dist/
           
           # Build CMake
           cd ../cmake
           ./bootstrap --parallel=$(nproc)
           make -j$(nproc)
-          
-          # Move to a staging directory for packaging
-          mkdir -p ../bin_dist
-          cp ninja ../bin_dist/
           cp bin/cmake ../bin_dist/
+          
+          # Setup ARM-GCC (If not built from source, move existing here)
+          # Assuming you have the binary folder ready
+          cp -r ../arm-gcc/* ../bin_dist/arm-gcc/
 
       - name: Setup MicroPython Venv
         run: |
@@ -44,9 +57,3 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npm run dist:linux:debian
-
-      - name: Upload Debian Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: microbit-compiler-deb
-          path: dist/*.deb
