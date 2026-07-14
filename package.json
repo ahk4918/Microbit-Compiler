@@ -54,7 +54,7 @@
         "filter": ["**/*"]
       }
     ],
-    "asar": true,
+    "asar": false,
     "asarUnpack": [
       "**/*.{node,dll,exe,so,dylib}",
       "resources/**"
