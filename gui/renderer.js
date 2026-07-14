@@ -187,7 +187,7 @@ async function refreshBuildHistory() {
     if (builds.length === 0) {
         buildHistory.innerHTML = `
             <div class="empty-state" style="padding: 20px; height: auto;">
-                <div class="empty-state-icon">📋</div>
+                <div class="material-icons">history</div>
                 <div class="empty-state-text">No builds yet</div>
             </div>`;
         return;
@@ -199,7 +199,7 @@ async function refreshBuildHistory() {
 
         const icon = document.createElement("div");
         icon.className = "build-item-icon";
-        icon.textContent = "📦";
+        icon.innerHTML = '<span class="material-icons">inventory_2</span>';
 
         const content = document.createElement("div");
         content.className = "build-item-content";
@@ -269,7 +269,7 @@ async function openBuild(folder) {
     // Delete button
     const delBtn = document.createElement("button");
     delBtn.className = "toolbar-btn danger";
-    delBtn.innerHTML = '<span>🗑️</span>Delete';
+    delBtn.innerHTML = '<span class="material-icons">delete</span>Delete';
     delBtn.style.fontSize = "11px";
     delBtn.style.padding = "4px 8px";
 
@@ -280,7 +280,7 @@ async function openBuild(folder) {
             currentBuildFolder = null;
             buildViewer.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-state-icon">📦</div>
+                    <div class="material-icons">inventory_2</div>
                     <div class="empty-state-text">Select a build to view files</div>
                 </div>`;
             buildMeta.textContent = "Ready";

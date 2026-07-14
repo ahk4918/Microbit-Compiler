@@ -1,20 +1,49 @@
-name: Debian Build Pipeline
+name: Build Pipeline
 
 on:
   push:
     branches: ["main", "master"]
+  release:
+    types: [published]
+
+permissions:
+  contents: write
 
 jobs:
-  build-linux-debian:
-    runs-on: ubuntu-latest
+  # Windows Build
+  build-windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
+      
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 1. Define Cache for all custom tools
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Windows Package
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: npm run dist:win
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: microbit-compiler-win
+          path: dist/*.exe
+
+  # Linux Debian Build
+  build-linux-debian:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Cache Build Tools
         id: cache-tools
         uses: actions/cache@v4
@@ -22,7 +51,6 @@ jobs:
           path: buildengine/C++/toolchain/bin_dist
           key: ${{ runner.os }}-build-tools-v1
 
-      # 2. Build only if cache-hit is false
       - name: Build Ninja, CMake & ARM-GCC from Source
         if: steps.cache-tools.outputs.cache-hit != 'true'
         run: |
@@ -39,9 +67,11 @@ jobs:
           make -j$(nproc)
           cp bin/cmake ../bin_dist/
           
-          # Setup ARM-GCC (If not built from source, move existing here)
-          # Assuming you have the binary folder ready
-          cp -r ../arm-gcc/* ../bin_dist/arm-gcc/
+          # Copy ARM-GCC
+          cp -r $GITHUB_WORKSPACE/buildengine/C++/toolchain/arm-gcc $GITHUB_WORKSPACE/buildengine/C++/toolchain/bin_dist/
+          
+          # Set permissions
+          chmod +x ../bin_dist/ninja ../bin_dist/cmake
 
       - name: Setup MicroPython Venv
         run: |
@@ -57,3 +87,27 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npm run dist:linux:debian
+
+      - name: Upload Debian Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: microbit-compiler-deb
+          path: dist/*.deb
+
+  # Release Job
+  release:
+    needs: [build-windows, build-linux-debian]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          token: ${{ secrets.GH_TOKEN }}

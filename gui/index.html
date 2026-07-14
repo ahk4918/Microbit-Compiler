@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Micro:bit Compiler Studio</title>
+    <!-- Link Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         :root {
             --bg: #0b0c10;
@@ -25,6 +27,24 @@
 
         * { box-sizing: border-box; }
 
+        /* ICON CLASS */
+        .material-icons {
+            font-family: 'Material Icons';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 18px;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* GLOBAL STYLES */
         html, body {
             margin: 0;
             padding: 0;
@@ -587,7 +607,8 @@
         <div class="sidebar-section">
             <div class="sidebar-title">Build</div>
             <button class="sidebar-btn active" data-view="editor">
-                <span class="sidebar-icon">📝</span>
+                <!-- Clipboard Icon -->
+                <span class="material-icons">content_copy</span>
                 Editor
             </button>
         </div>
@@ -597,7 +618,7 @@
         <div class="sidebar-section">
             <div class="sidebar-title">Projects</div>
             <button class="sidebar-btn" data-view="history">
-                <span class="sidebar-icon">📋</span>
+                <span class="material-icons">history</span>
                 History
             </button>
         </div>
@@ -610,7 +631,7 @@
         <div id="toolbar">
             <div class="toolbar-left">
                 <button class="toolbar-btn" id="select">
-                    <span>📁</span>
+                    <span class="material-icons">folder_open</span>
                     Select File
                 </button>
 
@@ -622,8 +643,14 @@
 
             <div class="toolbar-right">
                 <div style="display: flex; gap: 8px;">
-                    <button class="toolbar-btn" id="toolbar-build">🔨 Build</button>
-                    <button class="toolbar-btn success" id="toolbar-flash">⚡ Flash</button>
+                    <button class="toolbar-btn" id="toolbar-build">
+                        <span class="material-icons">build</span>
+                        Build
+                    </button>
+                    <button class="toolbar-btn success" id="toolbar-flash">
+                        <span class="material-icons">flash_on</span>
+                        Flash
+                    </button>
                 </div>
 
                 <div id="build-meta">Ready</div>
@@ -657,11 +684,13 @@
 
                     <div style="display: flex; gap: 8px;">
                         <button class="toolbar-btn" id="console-clear" style="padding: 4px 10px; font-size: 11px;">
-                            🧹 Clear
+                            <span class="material-icons">delete</span>
+                            Clear
                         </button>
 
                         <button class="toolbar-btn" id="console-toggle" style="padding: 4px 10px; font-size: 11px;">
-                            ▼ Collapse
+                            <span class="material-icons">expand_more</span>
+                            Collapse
                         </button>
                     </div>
                 </div>
@@ -696,7 +725,7 @@
                     <div class="panel-title">Build Details</div>
                     <div class="panel-content" id="build-viewer">
                         <div class="empty-state">
-                            <div class="empty-state-icon">📦</div>
+                            <div class="material-icons">inventory_2</div>
                             <div class="empty-state-text">Select a build to view files</div>
                         </div>
                     </div>

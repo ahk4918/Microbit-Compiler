@@ -11,12 +11,10 @@
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist:all": "electron-builder --linux --windows --mac --publish always",
-    "dist:linux:debian": "electron-builder --linux deb --publish always",
-    "dist:linux:fedora": "electron-builder --linux rpm --publish always",
-    "dist:linux:tar": "electron-builder --linux tar.gz --publish always",
-    "dist:win": "electron-builder --windows --publish always",
-    "dist:mac": "electron-builder --mac --publish always"
+    "dist:linux:debian": "electron-builder --linux deb",
+    "dist:linux:fedora": "electron-builder --linux rpm",
+    "dist:linux:tar": "electron-builder --linux tar.gz",
+    "dist:win": "electron-builder --windows"
   },
   "dependencies": {
     "electron-updater": "^6.3.9",
@@ -29,39 +27,61 @@
   "build": {
     "appId": "com.compiler.microbit",
     "productName": "Micro:bit Compiler",
+    "copyright": "Copyright © 2026 Akhilesh Gollapudi",
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "files": [
+      "gui/**/*",
+      "buildengine/**/*",
+      "assets/**/*",
+      "package.json",
+      "compiler.js",
+      "flash.js"
+    ],
     "extraResources": [
       {
-        "from": "buildengine/MPython/compilerVenv-x64/",
-        "to": "resources/compilerVenv/x64/",
+        "from": "buildengine/MPython/compilerVenv/",
+        "to": "resources/compilerVenv/",
         "filter": ["**/*"]
       },
       {
-        "from": "buildengine/MPython/compilerVenv-arm64/",
-        "to": "resources/compilerVenv/arm64/",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "buildengine/C++/toolchain/arm-gcc-x64/",
-        "to": "resources/toolchain/x64/",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "buildengine/C++/toolchain/arm-gcc-arm64/",
-        "to": "resources/toolchain/arm64/",
+        "from": "buildengine/C++/toolchain/bin_dist/",
+        "to": "resources/toolchain/",
         "filter": ["**/*"]
       }
     ],
-    "mac": {
-      "target": [
-        {
-          "target": "pkg",
-          "arch": "universal"
-        }
-      ],
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "entitlements.mac.plist",
-      "entitlementsInherit": "entitlements.mac.plist"
+    "asar": true,
+    "asarUnpack": [
+      "resources/**"
+    ],
+    "icon": "assets/icon.png",
+    "publish": {
+      "provider": "github",
+      "owner": "ahk4918",
+      "repo": "microbit-compiler"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "linux": {
+      "target": ["deb", "rpm", "tar.gz"],
+      "icon": "assets/icon.png",
+      "category": "Development",
+      "maintainer": "Akhilesh Gollapudi <akhilesh.gollapudi@outlook.com>",
+      "executableName": "microbit-compiler"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Micro:bit Compiler"
     }
   }
 }
