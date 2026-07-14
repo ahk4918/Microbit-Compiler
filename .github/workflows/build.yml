@@ -10,124 +10,232 @@ permissions:
 jobs:
   # Windows Build
   build-windows:
+    continue-on-error: true
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Cache Build Tools
-        id: cache-win
+
+      - name: Cache ARM Toolchain
+        id: cache-arm-windows
         uses: actions/cache@v4
         with:
-          path: buildengine/C++/toolchain/bin_dist
-          key: ${{ runner.os }}-build-tools-v1
-      - name: Create Toolchain Directories
-        shell: powershell
+          path: buildengine/C++/toolchain/arm-gcc
+          key: windows-arm-toolchain-13.2.rel1
+
+      # Only downloads and extracts if the cache was not restored successfully
+      - name: Setup ARM Toolchain
+        if: steps.cache-arm-windows.outputs.cache-hit != 'true'
+        shell: bash
         run: |
-          New-Item -Path "buildengine/C++/toolchain/bin_dist/arm-gcc" -ItemType Directory -Force
-          New-Item -Path "buildengine/C++/toolchain/bin_dist/ninja" -ItemType Directory -Force
-          New-Item -Path "buildengine/C++/toolchain/bin_dist/cmake" -ItemType Directory -Force
-      - name: Build Windows Package
+          rm -rf buildengine/C++/toolchain/arm-gcc buildengine/C++/toolchain/arm-gcc-temp arm-toolchain.zip
+          mkdir -p buildengine/C++/toolchain
+          curl -sL -o arm-toolchain.zip "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-mingw-w64-i686-arm-none-eabi.zip" || exit 1
+          7z x arm-toolchain.zip -obuildengine/C++/toolchain/arm-gcc-temp -y || exit 1
+          mv buildengine/C++/toolchain/arm-gcc-temp/arm-gnu-toolchain-13.2.Rel1-mingw-w64-i686-arm-none-eabi buildengine/C++/toolchain/arm-gcc || exit 1
+          rm -rf buildengine/C++/toolchain/arm-gcc-temp arm-toolchain.zip
+
+      - name: Setup MicroPython Venv (Copy Python)
+        shell: bash
+        run: |
+          mkdir -p buildengine/MPython
+          cd buildengine/MPython
+          python -m venv compilerVenv --copies
+          ./compilerVenv/Scripts/pip install uflash
+
+      - name: Install & Build
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npm run dist:win
+        run: |
+          npm install
+          npm run dist:win
+
       - name: Upload Windows Artifact
         uses: actions/upload-artifact@v4
         with:
           name: microbit-compiler-win
           path: dist/*.exe
+          compression-level: 9
 
-  # Shared Build Template for Linux Jobs
-  # We use identical caching logic for Debian, Fedora, and Tar
+  # Debian Build
   build-linux-debian:
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Cache Build Tools
-        id: cache-linux
+
+      - name: Cache ARM Toolchain
+        id: cache-arm-debian
         uses: actions/cache@v4
         with:
-          path: buildengine/C++/toolchain/bin_dist
-          key: ${{ runner.os }}-build-tools-v1
-      - name: Build Linux Dependencies
-        if: steps.cache-linux.outputs.cache-hit != 'true'
+          path: buildengine/C++/toolchain/arm-gcc
+          key: linux-arm-toolchain-13.2.rel1-debian
+
+      - name: Setup ARM Toolchain
+        if: steps.cache-arm-debian.outputs.cache-hit != 'true'
         run: |
-          mkdir -p buildengine/C++/toolchain/bin_dist/arm-gcc
-          # ... (add your build steps here)
+          rm -rf buildengine/C++/toolchain/arm-gcc arm-toolchain.tar.xz
+          mkdir -p buildengine/C++/toolchain/arm-gcc
+          wget -q "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz" -O arm-toolchain.tar.xz || exit 1
+          tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1 || exit 1
+          rm arm-toolchain.tar.xz
+
+      - name: Setup MicroPython Venv (Copy Python)
+        run: |
+          mkdir -p buildengine/MPython
+          cd buildengine/MPython
+          python3 -m venv compilerVenv --copies
+          ./compilerVenv/bin/pip install uflash
+
+      - name: Install Dependencies
+        run: npm install
+
       - name: Build Debian Package
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npm run dist:linux:debian
+
       - name: Upload Debian Artifact
         uses: actions/upload-artifact@v4
         with:
           name: microbit-compiler-deb
           path: dist/*.deb
+          compression-level: 9
 
+  # Fedora Build
   build-linux-fedora:
+    continue-on-error: true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Cache Build Tools
+
+      - name: Cache ARM Toolchain
+        id: cache-arm-fedora
         uses: actions/cache@v4
         with:
-          path: buildengine/C++/toolchain/bin_dist
-          key: ${{ runner.os }}-build-tools-v1
-      - name: Build RPM Package
+          path: buildengine/C++/toolchain/arm-gcc
+          key: linux-arm-toolchain-13.2.rel1-fedora
+
+      - name: Setup ARM Toolchain
+        if: steps.cache-arm-fedora.outputs.cache-hit != 'true'
+        run: |
+          rm -rf buildengine/C++/toolchain/arm-gcc arm-toolchain.tar.xz
+          mkdir -p buildengine/C++/toolchain/arm-gcc
+          wget -q "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz" -O arm-toolchain.tar.xz || exit 1
+          tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1 || exit 1
+          rm arm-toolchain.tar.xz
+
+      - name: Setup MicroPython Venv (Copy Python)
+        run: |
+          mkdir -p buildengine/MPython
+          cd buildengine/MPython
+          python3 -m venv compilerVenv --copies
+          ./compilerVenv/bin/pip install uflash
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Fedora Package
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npm run dist:linux:fedora
+
       - name: Upload Fedora Artifact
         uses: actions/upload-artifact@v4
         with:
           name: microbit-compiler-rpm
           path: dist/*.rpm
+          compression-level: 9
 
+  # Generic Linux TAR Build
   build-linux-tar:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Cache Build Tools
+
+      - name: Cache ARM Toolchain
+        id: cache-arm-tar
         uses: actions/cache@v4
         with:
-          path: buildengine/C++/toolchain/bin_dist
-          key: ${{ runner.os }}-build-tools-v1
-      - name: Build Tarball
+          path: buildengine/C++/toolchain/arm-gcc
+          key: linux-arm-toolchain-13.2.rel1-tar
+
+      - name: Setup ARM Toolchain
+        if: steps.cache-arm-tar.outputs.cache-hit != 'true'
+        run: |
+          rm -rf buildengine/C++/toolchain/arm-gcc arm-toolchain.tar.xz
+          mkdir -p buildengine/C++/toolchain/arm-gcc
+          wget -q "https://developer.arm.com/-/media/Files/downloads/gnu/13.2.rel1/binrel/arm-gnu-toolchain-13.2.rel1-x86_64-arm-none-eabi.tar.xz" -O arm-toolchain.tar.xz || exit 1
+          tar -xf arm-toolchain.tar.xz -C buildengine/C++/toolchain/arm-gcc --strip-components=1 || exit 1
+          rm arm-toolchain.tar.xz
+
+      - name: Setup MicroPython Venv (Copy Python)
+        run: |
+          mkdir -p buildengine/MPython
+          cd buildengine/MPython
+          python3 -m venv compilerVenv --copies
+          ./compilerVenv/bin/pip install uflash
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build TAR Package
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: npm run dist:linux:tar
-      - name: Upload Tarball Artifact
+
+      - name: Upload TAR Artifact
         uses: actions/upload-artifact@v4
         with:
           name: microbit-compiler-tar
           path: dist/*.tar.gz
+          compression-level: 9
 
   # Release Job
   release:
     needs: [build-windows, build-linux-debian, build-linux-fedora, build-linux-tar]
-    if: github.event_name == 'push'
+    if: github.event_name == 'release'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Download All Artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
           merge-multiple: true
-      - name: Release
+
+      - name: Get Release Notes
+        id: release-notes
+        run: |
+          NOTES=$(cat RELEASE.md)
+          # Escape newlines for JSON
+          NOTES="${NOTES//'%'/'%25'}"
+          NOTES="${NOTES//$'\n'/'%0A'}"
+          NOTES="${NOTES//$'\r'/'%0D'}"
+          echo "notes=$NOTES" >> $GITHUB_OUTPUT
+
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ github.run_number }}
+          name: Compiler v${{ github.run_number }}
+          body: ${{ steps.release-notes.outputs.notes }}
           files: artifacts/*
           token: ${{ secrets.GH_TOKEN }}
-          body_path: RELEASE.md
-          generate_release_notes: true
